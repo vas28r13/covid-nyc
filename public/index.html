@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+</head>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<style type="text/css">
+
+path:hover {
+  fill-opacity: .7;
+}
+</style>
+<body>
+  <div class="container-fluid" style="margin-top: 15px;">
+    <div class="row">
+      <div class="col-3">
+        <div id="viz-description"></div>
+      </div>
+      <div class="col-9 row">
+        <div id="nyc-viz-map"></div>
+      </div>
+    </div>
+  </div>
+</body>
+<script type="text/javascript">
+var colorList = ["rgb(69,173,168)", "rgb(84,36,55)"];
+
+//Width and height of map
+let width = 960;
+let height = 720;
+
+//Create SVG element and append map to the SVG
+let svg = d3.select("#nyc-viz-map")
+			.append("svg")
+			.attr("width", width)
+			.attr("height", height)
+            .style("width", "100%")
+            .style("height", "auto");
+
+// Load in my states data!
+var zipToStats = {};
+d3.csv("data/final.csv").then(function(data) {
+    data.forEach(function (d) {
+        let zip = d["ZIP_CODE"];
+        zipToStats[zip] = d
+    });
+});
+
+d3.json("data/nyc-zipcode.json").then(function(nyc) {
+    for (let j = 0; j < nyc.features.length; j++)  {
+        let zip = nyc.features[j].properties.postalCode;
+        let zipStats = zipToStats[zip];
+
+        if (!zipStats) continue;
+
+        let perThousand = parseFloat(zipStats["PER_THOUSAND"]).toFixed(2);
+        let perThousandScaled = parseFloat(zipStats["PER_THOUSAND_SCALED"]).toFixed(2);
+        let positives = parseFloat(zipStats["Positive"]).toFixed(0);
+
+        nyc.features[j].properties.perThousand = perThousand;
+        nyc.features[j].properties.perThousandScaled = perThousandScaled;
+        nyc.features[j].properties.positives = positives;
+    }
+
+    let path = d3.geoPath()
+      .projection(d3.geoConicConformal()
+      .parallels([33, 45])
+      .rotate([96, -39])
+      .fitSize([width, height], nyc));
+
+    svg.selectAll("path")
+        .data(nyc.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .style("stroke-width", 1.5)
+        .attr("stroke", '#fff')
+        .style("fill", function(d) {
+            return colorList[1];
+        })
+        .style("opacity", function(d) {
+            let perThousandScaled = parseFloat(d.properties.perThousandScaled);
+            if (!perThousandScaled) return 0;
+            return (perThousandScaled + 0.05)*1.5;
+        })
+        .on("mouseover", function(d) {
+            $("#viz-description").html(
+                    "ZIPCODE: <b>" + d.properties.postalCode + "</b><br>" +
+                    "<b>" + d.properties.PO_NAME + "</b><br>" +
+                    "<b>" + d.properties.positives + "</b> known cases that tested positive <br>"+
+                    "<b>" + d.properties.perThousand + "</b> known cases that tested positive per 1000"
+            )
+        })
+    ;
+
+});
+</script>
+</html>
