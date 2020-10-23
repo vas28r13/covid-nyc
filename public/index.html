@@ -57,7 +57,7 @@ d3.json("data/nyc-zipcode.json").then(function(nyc) {
 
         let perThousand = parseFloat(zipStats["PER_THOUSAND"]).toFixed(2);
         let perThousandScaled = parseFloat(zipStats["PER_THOUSAND_SCALED"]).toFixed(2);
-        let positives = parseFloat(zipStats["Positive"]).toFixed(0);
+        let positives = parseFloat(zipStats["COVID_CASE_COUNT"]).toFixed(0);
 
         nyc.features[j].properties.perThousand = perThousand;
         nyc.features[j].properties.perThousandScaled = perThousandScaled;

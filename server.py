@@ -16,14 +16,14 @@ def root():
 
 def load_data():
     scaler = MinMaxScaler()
-    url = 'https://raw.githubusercontent.com/nychealth/coronavirus-data/master/tests-by-zcta.csv'
+    url = 'https://raw.githubusercontent.com/nychealth/coronavirus-data/master/data-by-modzcta.csv'
     wget.download(url, out='./public/data')
 
-    tests_df = pd.read_csv('./public/data/tests-by-zcta.csv', dtype={'MODZCTA': str})
+    tests_df = pd.read_csv('./public/data/data-by-modzcta.csv', dtype={'MODIFIED_ZCTA': str})
     population_df = pd.read_csv('./public/data/population.csv', dtype={'ZIP_CODE': str})
 
-    df = tests_df.merge(population_df, left_on='MODZCTA', right_on='ZIP_CODE', how='inner')
-    df['PER_THOUSAND'] = df.apply(lambda x: x['Positive']/x['POPULATION']*1000, axis=1)
+    df = tests_df.merge(population_df, left_on='MODIFIED_ZCTA', right_on='ZIP_CODE', how='inner')
+    df['PER_THOUSAND'] = df.apply(lambda x: x['COVID_CASE_COUNT']/x['POPULATION']*1000, axis=1)
     df['PER_THOUSAND_SCALED'] = scaler.fit_transform(df[['PER_THOUSAND']])
     df.to_csv('./public/data/final.csv', encoding='utf-8', index=False)
 
